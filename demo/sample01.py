@@ -28,23 +28,56 @@ URLS = [
     # '26587820120',
 ]
 
+URLS = [
+ u'521893618096',
+ u'523814861817',
+ u'522155891308',
+ u'521908735694',
+ u'523999488662',
+ u'521895708737',
+ u'521729908117',
+ u'521857135599', # 這個會卡主
+ u'527048515751'
+]
 
+
+def get_ingore_time_out(driver, url, s):
+    try:
+        print(u"    访问超时设定(%s) %s" % (url, s))
+        # driver.set_page_load_timeout(s)
+        driver.get(url)
+    except TimeoutException:
+        print(u"    *** 页面加载超时, 直接跳过 ***")
+        pass
 
 def processOneGoods(driver, id):
     url = BASE_GOODS_URL + id
     print(u"\n\n********************[ID: %s]********************" % id)
 
     print(u"    跳转到 商品页面 【%s】...." % url)
-    driver.get(url)
+
+    get_ingore_time_out(driver, url, 5)
+
     try:
         matchIndex = 0
         dealCnt = ""
 
-        title = driver.find_element_by_class_name('tb-main-title').get_attribute("data-title")
+        # 是否天猫商品判断
+        if url != driver.current_url:
+            items = driver.find_elements_by_tag_name('h1')
+            for i in items:
+                if i.get_attribute('data-spm'):
+                    title = i.text
+
+            if not title:
+                raise NoSuchElementException()
+
+        else:
+            title = driver.find_element_by_class_name('tb-main-title').get_attribute("data-title")
         print(u"    获取到 商品标题为 【%s】...." % title)
         print(u"    跳转到 搜索页面: %s...." % SEARCH_URL)
         driver.get(SEARCH_URL)
-        WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located)
+
         inputElement = driver.find_element_by_id('q')
         inputElement.send_keys(title)
         btn = driver.find_element_by_class_name('btn-search')
@@ -54,7 +87,7 @@ def processOneGoods(driver, id):
         print(u"    页面加载完成， 搜索商品 ...")
         # WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located)
         items = driver.find_elements_by_class_name('item ')
-        matchItems = [ i for i in items if i.get_attribute('data-category') == "auctions" ]
+        matchItems = [i for i in items if i.get_attribute('data-category') == "auctions"]
 
         goodsItemId = 'J_Itemlist_PLink_%s' % id
         for i,item in enumerate(matchItems):
@@ -107,6 +140,9 @@ def MainLoop():
     print(u"*** 打开浏览器 ***")
     # Create a new instance of the Firefox driver
     driver = webdriver.Firefox()
+    driver.set_page_load_timeout(6)
+    driver.set_script_timeout(6)
+    driver.implicitly_wait(6)
 
     # go to the google home page
     print(u"*** 登录淘宝首页 ***")
@@ -118,9 +154,9 @@ def MainLoop():
             # driver.find_element_by_class_name('login-info-nick')
             # time.sleep(1)
             print(u"Login Success...")
-            for i in URLS:
-                processOneGoods(driver, i)
-            break;
+            [i for i in URLS if processOneGoods(driver, i)]
+
+            # break
             print(u"退出登录...")
 
         except NoSuchElementException, e:
