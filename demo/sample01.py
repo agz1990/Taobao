@@ -103,6 +103,15 @@ def processOneGoods(driver, id):
         print(e)
 
 
+def ProcessOneFile(file):
+
+
+    pass
+
+
+def ProcessDir(dirname):
+    pass
+
 def MainLoop():
     print(u"*** 打开浏览器 ***")
     # Create a new instance of the Firefox driver
