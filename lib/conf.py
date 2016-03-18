@@ -19,5 +19,6 @@ def initConfig():
     g_vars.forceLogin = bool(int(conf.get("base", "force_login")))
     g_vars.navie_min_sec = int(conf.get('base', 'navie_min_sec'))
     g_vars.navie_max_sec = int(conf.get('base', 'navie_max_sec'))
+    g_vars.webdriver = conf.get('base', 'webdriver')
 
 

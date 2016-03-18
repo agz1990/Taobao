@@ -16,13 +16,16 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 from lib.conf import initConfig
 from lib import globalVars as g_vars
+from lib.globalVars import driver
 from lib import taobao
+from lib.taobao import sleepShowProcess
 
 logging.config.fileConfig('log.conf')
 logger = logging.getLogger('FroductInfo')
 
 SEARCH_URL = 'https://s.taobao.com/'
 BASE_GOODS_URL = "https://item.taobao.com/item.htm?id="
+
 
 #
 # 启动文件： GetProductInfo.exe
@@ -49,26 +52,38 @@ def ProcessOneFile(driver, f):
     errorCnt = 0
 
     with open(processFileName) as fhandle:
-        idlist = [line.strip() for line in fhandle if len(line.strip()) > 5]
-        logger.info(u'本文件有 %d 个有效 id. ' % len(idlist))
-        for index, id in enumerate(idlist):
+        # idlist = [line.strip() for line in fhandle if len(line.strip()) > 5 and re.match('\d+', line)]
 
+        idlist = []
+        for index, line in enumerate(fhandle):
+            line = line.strip()
+            if re.match(r'^\d+$', line):
+                idlist.append(line)
+            else:
+                logger.warn('无效行 %5d : %s' % (index+1, line) )
+
+
+        logger.info(u'本文件有 %d 个有效 id. ' % len(idlist))
+        for index, gid in enumerate(idlist):
+            resultStr = ''
             try:
-                logger.info(u'*** 开始处理第 %4d 个 [ %s ]  ***' % (index + 1, id))
-                g = taobao.processOneGoods(driver, id)
-                resultStr = u"%03d|%s|%s|%14s|%8s|%14s|8%s|" % (
-                    index + 1, g['id'], g['from'], g['defaultTotal'], g['defaultDealCnt'],
-                    g['saleOrderTotal'], g['saleOrderDealCnt']
+                logger.info(u'*** 开始处理第 %4d 个 [ %s ]  ***' % (index + 1, gid))
+                g = taobao.processOneGoods(driver, gid)
+                resultStr = u"%03d|%12s|%s|%s|%14s|%8s|%8s|" % (
+                    index + 1, g['id'],  g['from'], g['status'], g['defaultTotal'], g['defaultDealCnt'],
+                     g['saleOrderDealCnt']
                 )
 
                 successCnt += 1
                 time.sleep(1)
-                logger.info(u'*** 第 %4d 个 [ %s ] 处理成功 ***' % (index + 1, id))
+                logger.info(u'*** 第 %4d 个 [ %s ] 处理成功 ***' % (index + 1, gid))
             except Exception, e:
-                errorCnt += 1
-                resultStr = u"%03d| 执行异常 ..." % (index + 1)
 
-                logger.error(u'*** 第 %4d 个 [ %s ] 处理失败 ***' % (index + 1, id))
+                errorCnt += 1
+                resultStr = u"%03d|%12s|%s" % (
+                    index + 1, gid, u'异常'
+                )
+                logger.error(u'*** 第 %4d 个 [ %s ] 处理失败 ***' % (index + 1, gid))
                 logger.error(traceback.format_exc())
 
             finally:
@@ -86,22 +101,13 @@ def ProcessOneFile(driver, f):
 
 
 def MainLoop():
-    initConfig()
-    logger.info(u"########################################")
-    logger.info(u"# 网页超时时间: %d 秒" % g_vars.load_page_time_out)
-    logger.info(u"# 等待时间: %d ~ %d 秒" % (g_vars.navie_min_sec, g_vars.navie_max_sec))
-    logger.info(u"# 强制用户登录: %s " % g_vars.forceLogin)
-    logger.info(u"########################################\n")
 
-    os.chdir(g_vars.workingdir)
+    init()
 
-    logger.info(u"*** 打开浏览器 ***")
-    driver = webdriver.Firefox()
-    driver.set_page_load_timeout(int(g_vars.load_page_time_out))
-    driver.set_script_timeout(int(g_vars.load_page_time_out))
-
+    driver = g_vars.driver
     if g_vars.forceLogin:
-        taobao.WaitForLogind(driver)
+        taobao.WaitForLogind(g_vars.driver)
+
     cnt = 0
     while True:
         flist = glob('*.list')
@@ -113,13 +119,50 @@ def MainLoop():
             ProcessOneFile(driver, processingFiles.pop())
         except IndexError:
             cnt += 1
-            logger.info(u'当前目录没有需要处理的文件 ....')
+            sleepShowProcess(30, u'没有需要处理的文件 等待 30 秒 ')
 
-        time.sleep(30)
+
 
     driver.quit()
     time.sleep(3)
 
+def init():
+
+    initConfig()
+    logger.info(u"########################################")
+    logger.info(u"# 网页超时时间: %d 秒" % g_vars.load_page_time_out)
+    logger.info(u"# 等待时间: %d ~ %d 秒" % (g_vars.navie_min_sec, g_vars.navie_max_sec))
+    logger.info(u"# 强制用户登录: %s " % g_vars.forceLogin)
+    logger.info(u"# 浏览器的类型: %s " % g_vars.webdriver)
+    logger.info(u"########################################\n")
+
+
+    logger.info(u"*** 打开浏览器 ***")
+
+
+    if g_vars.webdriver == 'chrome':
+        g_vars.driver = webdriver.Chrome()
+    else:
+        g_vars.driver = webdriver.Firefox()
+
+    g_vars.driver.set_page_load_timeout(int(g_vars.load_page_time_out))
+    g_vars.driver.set_script_timeout(int(g_vars.load_page_time_out))
+
+    os.chdir(g_vars.workingdir)
+
+
+def test():
+
+    if driver == None:
+        init()
+    with open('list.full') as f: idlist = [line.strip() for line in f if len(line.strip()) > 5]
+
+"""
+logger.info(u"*** 打开浏览器 ***")
+driver = webdriver.Firefox()
+driver.set_page_load_timeout(int(g_vars.load_page_time_out))
+driver.set_script_timeout(int(g_vars.load_page_time_out))
+"""
 
 if __name__ == '__main__':
     MainLoop()
