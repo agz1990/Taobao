@@ -112,7 +112,7 @@ def MainLoop():
         try:
             ProcessOneFile(driver, processingFiles.pop())
         except IndexError:
-            pass
+            cnt += 1
             logger.info(u'当前目录没有需要处理的文件 ....')
 
         time.sleep(30)
