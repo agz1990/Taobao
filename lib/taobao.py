@@ -64,6 +64,47 @@ def sleepShowProcess(sec, msg , width=40):
             sys.stdout.write('\n')
             break
 
+def HightLightMatchGood(driver, gid, collor = 'red'):
+
+    gid = str(gid)
+    items = driver.find_elements_by_class_name('item ')
+    matchItems = [i for i in items if i.get_attribute('data-category') == "auctions"]
+
+    goodsItemId = 'J_Itemlist_PLink_%s' % gid
+    dealCnt = None
+    for i, item in enumerate(matchItems):
+
+        try:
+            item.find_element_by_id(goodsItemId)
+
+            # 滚动到指定报宝贝
+            item.location_once_scrolled_into_view
+
+            # 高亮商品
+            driver.execute_script(
+                """var p = document.getElementById('J_Itemlist_PLink_41072132463');
+                p.innerHTML='宝贝 [%s] ';
+                p.style.backgroundColor = 'red';""" % gid)
+
+            matchIndex = i + 1
+            dealCnt = item.find_element_by_class_name('deal-cnt').text
+            # 获取多少人购买
+
+            msg = u"    *** [%s] 匹配到第 %s 个宝贝 【%s】 ***" % (gid, matchIndex, dealCnt)
+            logger.debug(msg)
+            driver.execute_script("alert('%s')" % msg)
+
+            alert = driver.switch_to.alert
+            sleepShowProcess(5, u'    弹出提示框等待 5 秒 ')
+            alert.accept()
+            # goodInfo['defaultDealCnt'] = dealCnt
+
+        except NoSuchElementException, e:
+            continue
+
+    if not dealCnt:
+        logger.debug(u"    *** [%s] 【综合排序】第一页找不到该宝贝 ***"% gid)
+
 
 def PageLoadAndRandomWait(driver, url):
     try:
@@ -212,6 +253,9 @@ def processOneGoods(driver, gid):
         logger.debug(u"    *** [%s] 匹配到第 %s 个宝贝 【%s】 ***" % (gid, matchIndex, dealCnt))
     else:
         logger.debug(u"    *** [%s] 【综合排序】第一页找不到该宝贝 ***"% gid)
+
+
+    dealCnt = None
 
     # nextUrl= re.sub('default$', 'sale-desc', driver.current_url)
     nextUrl = driver.current_url + '&sort=sale-desc'
