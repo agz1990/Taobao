@@ -623,7 +623,7 @@ class Goods(object):
         )
 
     def getToFileStr(self):
-        return u'''# NO. {seq:04d} |{id:>14s}|{where}|{status}|{totalCnt:^18s}|{baseSearResult:s}|{saleSearchResult:s}|'''.format(
+        return u'''# NO. {seq:04d} |{id:>14s}|{where}|{status}|{totalCnt:>18s}|{baseSearResult:s}|{saleSearchResult:s}|'''.format(
             seq=self.seq,
             id=self.gid,
             totalCnt=unicode(self.totalCnt),

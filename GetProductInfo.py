@@ -125,7 +125,7 @@ def MainLoop():
         logger.info(u'扫描目录 %s 获取待处理文件(%s)个 第 %d 次扫描' % (g_vars.workingdir, len(processingFiles), cnt))
 
         try:
-            ProcessOneFile(driver, processingFiles.pop())
+            ProcessOneFile(driver, processingFiles.pop(), True)
         except IndexError:
             cnt += 1
             sleepShowProcess(30, u'没有需要处理的文件 等待 30 秒 ')
