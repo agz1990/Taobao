@@ -37,13 +37,17 @@ BASE_GOODS_URL = "https://item.taobao.com/item.htm?id="
 # 4. 程序会将正在处理的文件后缀名修改为 .proc
 # 5. 最终将生成结果文件 *.result
 
-def ProcessOneFile(driver, f):
+def ProcessOneFile(driver, f, rename=False):
     currentFilenName = f
     processFileName = currentFilenName[:-5] + '.proc'
     finishFileName = currentFilenName[:-5] + '.finish'
     resultFileName = currentFilenName[:-5] + '.result'
     logger.info(u'*** 开始处理文件: %s ***' % currentFilenName)
-    os.rename(currentFilenName, processFileName)
+
+    if rename:
+        os.rename(currentFilenName, processFileName)
+    else:
+        processFileName = currentFilenName
 
     if os.path.exists(resultFileName):
         os.remove(resultFileName)
@@ -60,7 +64,8 @@ def ProcessOneFile(driver, f):
             if re.match(r'^\d+$', line):
                 idlist.append(line)
             else:
-                logger.warn('无效行 %5d : %s' % (index+1, line) )
+                # logger.warn(u'无效行 %5d : %s' % (index+1, line.decode('utf-8')) )
+                pass
 
 
         logger.info(u'本文件有 %d 个有效 id. ' % len(idlist))
@@ -68,11 +73,14 @@ def ProcessOneFile(driver, f):
             resultStr = ''
             try:
                 logger.info(u'*** 开始处理第 %4d 个 [ %s ]  ***' % (index + 1, gid))
-                g = taobao.processOneGoods(driver, gid)
-                resultStr = u"%03d|%12s|%s|%s|%14s|%8s|%8s|" % (
-                    index + 1, g['id'],  g['from'], g['status'], g['defaultTotal'], g['defaultDealCnt'],
-                     g['saleOrderDealCnt']
-                )
+                # g = taobao.processOneGoods(driver, gid)
+                goods = taobao.Goods(driver, gid, index + 1)
+                goods.Process()
+                # resultStr = u"%03d|%12s|%s|%s|%14s|%8s|%8s|" % (
+                #     index + 1, g['id'],  g['from'], g['status'], g['defaultTotal'], g['defaultDealCnt'],
+                #      g['saleOrderDealCnt']
+                # )
+                resultStr = goods.getToFileStr()
 
                 successCnt += 1
                 time.sleep(1)
@@ -80,9 +88,10 @@ def ProcessOneFile(driver, f):
             except Exception, e:
 
                 errorCnt += 1
-                resultStr = u"%03d|%12s|%s" % (
-                    index + 1, gid, u'异常'
-                )
+                # resultStr = u"%03d|%12s|%s" % (
+                #     index + 1, gid, u'异常'
+                # )
+                resultStr = u"# NO. {seq:04d} |{id:^14s}| 异常".format(seq=index+1, id=gid)
                 logger.error(u'*** 第 %4d 个 [ %s ] 处理失败 ***' % (index + 1, gid))
                 logger.error(traceback.format_exc())
 
@@ -93,8 +102,8 @@ def ProcessOneFile(driver, f):
                     retFile.write(resultStr.encode('utf-8'))
 
     logger.info(u'*** 文件 %s 处理完毕 成功 %d 失败 %d ***' % (currentFilenName, successCnt, errorCnt))
-
-    os.rename(processFileName, finishFileName)
+    if rename:
+        os.rename(processFileName, finishFileName)
     # if g_vars.debug:
     #     logger.debug('调试模式将 ' % )
     #     os.rename(processFileName, currentFilenName)
