@@ -82,13 +82,16 @@ def HightLightMatchGood(driver, gid, collor = 'red'):
 
             # 高亮商品
             driver.execute_script(
-                """var p = document.getElementById('J_Itemlist_PLink_41072132463');
+                """var p = document.getElementById('J_Itemlist_PLink_%s');
                 p.innerHTML='宝贝 [%s] ';
-                p.style.backgroundColor = 'red';""" % gid)
+                p.style.backgroundColor = 'red';""" % (gid, gid))
 
             matchIndex = i + 1
-            dealCnt = item.find_element_by_class_name('deal-cnt').text
+
+            totalCnt = driver.find_element_by_id('mainsrp-nav').find_element_by_class_name('total').text
+
             # 获取多少人购买
+            dealCnt = item.find_element_by_class_name('deal-cnt').text
 
             msg = u"    *** [%s] 匹配到第 %s 个宝贝 【%s】 ***" % (gid, matchIndex, dealCnt)
             logger.debug(msg)
@@ -97,13 +100,20 @@ def HightLightMatchGood(driver, gid, collor = 'red'):
             alert = driver.switch_to.alert
             sleepShowProcess(5, u'    弹出提示框等待 5 秒 ')
             alert.accept()
+            return matchIndex, totalCnt, dealCnt
             # goodInfo['defaultDealCnt'] = dealCnt
 
         except NoSuchElementException, e:
             continue
+    #
+    # if not dealCnt:
+    #     logger.debug(u"    *** [%s] 【综合排序】第一页找不到该宝贝 ***"% gid)
 
-    if not dealCnt:
-        logger.debug(u"    *** [%s] 【综合排序】第一页找不到该宝贝 ***"% gid)
+    raise NoSuchElementException(u'宝贝ID [ %s ] 不在本页面 '.encode('gbk') % gid)
+
+
+
+        # 本页面没找到报异常
 
 
 def PageLoadAndRandomWait(driver, url):
@@ -122,6 +132,53 @@ def PageLoadAndRandomWait(driver, url):
         else:
             sec = float(random.choice(range(g_vars.navie_min_sec*1000, g_vars.navie_max_sec*1000)) / 1000)
         sleepShowProcess(sec,  u'    加载网页 随机等待 %0.2f 秒 ' % sec)
+
+
+def PageLoadFixWait(driver, url, fixsec = 0):
+    try:
+        driver.get(url)
+
+    except TimeoutException:
+        logger.info(u'    页面超时， 直接跳过 ...')
+
+    finally:
+        if fixsec != 0:
+            sleepShowProcess(fixsec,  u'    加载网页固定等待 %0.2f 秒 ' % fixsec)
+
+
+def SearchGood(driver, url, gid, maxpage=6):
+    # matchIndex, totalCnt, dealCnt
+    for i in range(1, maxpage):
+        try:
+            if i == 1:
+                logger.debug(u'    进入搜索页面....')
+                if driver.current_url != url:
+                    PageLoadFixWait(driver, url, 3)
+            else:
+                sleepShowProcess(5, u'    等待进入 %s 页查找...' % i)
+
+            matchIndex, totalCnt, dealCnt = HightLightMatchGood(driver, gid)
+            return i, matchIndex, totalCnt, dealCnt
+            logger.info(u'     找到商品 退出...')
+            return
+
+        except NoSuchElementException, e: # 找不到选择下一页
+            logger.debug(u"    *** [%s] 第%s页找不到该宝贝 ***" % (gid, i))
+            # 本页面找不到点击下一页
+            btns = driver.find_element_by_id('mainsrp-pager').find_elements_by_class_name('item')
+
+            try:
+                btns[i+1].location_once_scrolled_into_view
+                btns[i+1].click()
+
+            except IndexError:
+                # 没有下一页了
+                raise NoSuchElementException(u'宝贝ID [ %s ] 在前%s页找不到 '.encode('gbk') % (gid, i))
+
+
+
+
+
 
 
 def WaitForLogind(driver):
