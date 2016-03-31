@@ -1,6 +1,8 @@
 # coding: utf-8
 __author__ = 'jigc'
 
+import GetUserInfoConf
+
 workingdir = "workingdir"
 outputDir = ""
 debug = True
@@ -13,3 +15,6 @@ webdriver = 'chrome'
 
 search_maxpage = 5
 search_next_page_wait_sec = 5
+support_dial = 0
+
+process_times = 0

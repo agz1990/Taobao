@@ -20,5 +20,6 @@ def initConfig():
     g_vars.navie_min_sec = int(conf.get('base', 'navie_min_sec'))
     g_vars.navie_max_sec = int(conf.get('base', 'navie_max_sec'))
     g_vars.webdriver = conf.get('base', 'webdriver')
-
+    g_vars.support_dial = bool(int(conf.get('NetWork', 'support_dial')))
+    g_vars.GetUserInfoConf.reconnect_times = int(conf.get('GetUserInfo', 'reconnect_times'))
 
