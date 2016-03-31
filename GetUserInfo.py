@@ -26,7 +26,7 @@ BLOCK_URL = 'http://www.taoyitu.com/Shield.html'
 
 
 #
-# 启动文件： GetProductInfo.exe
+# 启动文件： GetUserInfo.exe
 # 配置文件: conf/conf.ini
 #
 # 1. 启动程序， 准备好 宝贝ID写入到 *.list(所有以*.list结尾的文件名都行) 结尾的文件，保存。
@@ -203,13 +203,6 @@ def init():
     g_vars.driver.set_script_timeout(int(g_vars.load_page_time_out))
 
     os.chdir(g_vars.workingdir)
-
-
-def test():
-    if driver == None:
-        init()
-    with open('list.full') as f: idlist = [line.strip() for line in f if len(line.strip()) > 5]
-
 
 """
 logger.info(u"*** 打开浏览器 ***")
