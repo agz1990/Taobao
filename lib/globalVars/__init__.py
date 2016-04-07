@@ -18,3 +18,7 @@ search_next_page_wait_sec = 5
 support_dial = 0
 
 process_times = 0
+
+
+max_page = 100
+next_page_wait_time = 30

@@ -23,3 +23,6 @@ def initConfig():
     g_vars.support_dial = bool(int(conf.get('NetWork', 'support_dial')))
     g_vars.GetUserInfoConf.reconnect_times = int(conf.get('GetUserInfo', 'reconnect_times'))
 
+    g_vars.max_page = int(conf.get('GetSalerInfo', 'max_page'))
+    g_vars.next_page_wait_time = int(conf.get('GetSalerInfo', 'next_page_wait_time'))
+
